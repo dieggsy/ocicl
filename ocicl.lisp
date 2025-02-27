@@ -697,11 +697,13 @@ Distributed under the terms of the MIT License"
       (values (json:decode-json-from-string body) (gethash "docker-content-digest" response-headers)))))
 
 (defun get-blob (registry system tag dl-dir)
+  (format t ">>>>>>>>>>>>>>>>>> OCICL::GET-BLOB~%")
   (let* ((token (get-bearer-token registry system))
          (server (get-up-to-first-slash registry))
          (repository (get-repository-name registry)))
     (multiple-value-bind (manifest manifest-digest)
         (get-manifest registry system tag)
+      (format t ">>>>>>>>>>>>>>>>>> DEX:GET~%")
       (let* ((digest (cdr (assoc :digest (cadr (assoc :layers manifest)))))
              (input (dex:get #?"https://${server}/v2/${repository}/${system}/blobs/${digest}"
                              :force-binary t
@@ -712,11 +714,13 @@ Distributed under the terms of the MIT License"
             ((tar-simple-extract:broken-or-circular-links-error
               (lambda (condition)
                 (invoke-restart 'continue))))
+          (format t ">>>>>>>>>>>>>>>>>> TAR:WITH-OPEN-ARCHIVE~%")
           (tar:with-open-archive (a input)
                                  (tar-simple-extract:simple-extract-archive a :directory dl-dir)))
         manifest-digest))))
 
 (defun download-and-install (fullname)
+      (format t ">>>>>>>>>>>>>>>>>> OCICL::DOWNLOAD-AND-INSTALL~%")
   (let ((dl-dir (get-temp-ocicl-dl-pathname)))
     (unwind-protect
          (progn
